@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nguyễn Anh Tuấn TVD - Hệ Thống Tạo Đề Toán Thực Tế 12</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MathJax để hiển thị công thức toán -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="bg-indigo-700 text-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wide">Nguyễn Anh Tuấn TVD</h1>
+            <p class="text-sm bg-indigo-800 px-3 py-1 rounded-full mt-2 md:mt-0">Hệ thống Sinh Đề Toán Thực Tế 12 - CT 2018</p>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="container mx-auto px-4 py-8 flex-grow grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        <!-- Sidebar Controls -->
+        <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-5">
+            <h2 class="text-lg font-semibold text-indigo-700 border-b pb-2">Bảng Điều Khiển</h2>
+            
+            <!-- Chọn Chủ Đề -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Chọn Chủ Đề Toán 12:</label>
+                <select id="topicSelect" class="w-full border-gray-300 rounded-lg shadow-sm p-2.5 border focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="optimization">1. Bài toán tối ưu thực tế (Đạo hàm)</option>
+                    <option value="exponential">2. Lãi suất, tăng trưởng dân số (Mũ - Logarit)</option>
+                    <option value="geometry">3. Hình học không gian thực tế (Oxyz / Tọa độ)</option>
+                    <option value="statistics">4. Thống kê & Xác suất trong đời sống</option>
+                </select>
+            </div>
+
+            <!-- Tải file mẫu & Import file -->
+            <div class="space-y-2 pt-2 border-t">
+                <label class="block text-sm font-medium text-gray-700">Tùy chỉnh dữ liệu ngoài:</label>
+                <button onclick="downloadTemplate()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition duration-200">
+                    📥 Tải File Mẫu (.JSON/.CSV)
+                </button>
+                <label class="w-full block bg-gray-100 hover:bg-gray-200 text-gray-700 text-center font-medium py-2 px-4 rounded-lg text-sm cursor-pointer transition duration-200">
+                    📁 Thêm file đề tùy chỉnh
+                    <input type="file" id="importFile" class="hidden" accept=".json,.csv" onchange="handleFileUpload(event)">
+                </label>
+            </div>
+
+            <!-- Nút Sinh Đề -->
+            <button onclick="generateExam()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg shadow transition duration-200">
+                ✨ Sinh Đề Mới (Đổi Hệ Số)
+            </button>
+        </div>
+
+        <!-- Nội dung hiển thị đề -->
+        <div class="lg:col-span-3 bg-white p-6 md:p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-center border-b pb-4 mb-6">
+                    <h3 id="examTitle" class="text-xl font-bold text-gray-800">Nội dung đề thi sẽ hiển thị ở đây</h3>
+                    <span id="badgeTopic" class="text-xs bg-blue-100 text-blue-800 font-semibold px-2.5 py-1 rounded">Chưa chọn</span>
+                </div>
+                
+                <!-- Khu vực đề bài -->
+                <div id="examContent" class="space-y-6 text-gray-700 text-base leading-relaxed">
+                    <p class="text-gray-400 italic">Nhấn nút "Sinh Đề Mới" ở bảng điều khiển bên trái để bắt đầu tạo bộ đề thực tế ngẫu nhiên không vi phạm điều kiện.</p>
+                </div>
+            </div>
+
+            <!-- Nút In / Xuất PDF -->
+            <div class="mt-8 pt-4 border-t flex justify-end">
+                <button onclick="window.print()" class="bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium py-2 px-5 rounded-lg transition duration-200">
+                    🖨️ In hoặc Lưu Đề (PDF)
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t py-4 text-center text-sm text-gray-500">
+        © 2026 - Ứng dụng phát triển cho giáo viên Toán 12 | Bản quyền thuộc về **Nguyễn Anh Tuấn TVD**
+    </footer>
+
+    <!-- JavaScript Xử Lý Logic Ngẫu Nhiên Không Lỗi Điều Kiện -->
+    <script>
+        // Cơ sở dữ liệu mẫu cho các bài toán thực tế lớp 12 (Chương trình 2018)
+        let customDatabase = null;
+
+        const defaultBank = {
+            optimization: [
+                {
+                    title: "Bài toán thiết kế hộp đựng đồ (Cực trị hàm số)",
+                    generate: () => {
+                        // Hệ số ngẫu nhiên an toàn: Chiều dài x rộng tấm bìa hình chữ nhật
+                        let W = Math.floor(Math.random() * 10) + 20; // 20 đến 29 cm
+                        let L = W + Math.floor(Math.random() * 10) + 10; // Đảm bảo L > W
+                        // Cắt 4 góc x sao cho x nằm trong khoảng hợp lý (0 < x < W/2)
+                        let maxCut = Math.floor(W / 2) - 1;
+                        let x = Math.floor(Math.random() * (maxCut - 2)) + 1; // x nguyên để đẹp hoặc tính toán
+                        
+                        let volume = (L - 2*x) * (W - 2*x) * x;
+                        return {
+                            question: `Một tấm bìa hình chữ nhật có chiều dài ${L} (cm) và chiều rộng ${W} (cm). Người ta cắt ở bốn góc bốn hình vuông bằng nhau, mỗi hình vuông có cạnh là $x$ (cm) rồi gập lại thành một chiếc hộp chữ nhật không nắp. Để thể tích của hộp đạt giá trị lớn nhất, cạnh $x$ của hình vuông góc phải cắt bằng bao nhiêu?`,
+                            solution: `Thể tích hộp là $V(x) = x(L-2x)(W-2x) = x(${L}-2x)(${W}-2x)$. Điều kiện thực tế: $0 < x < \\frac{${W}}{2}$. Khảo sát hàm số ta tìm được giá trị $x$ tối ưu.`
+                        }
+                    }
+                },
+                {
+                    title: "Bài toán chi phí xây dựng tối ưu",
+                    generate: () => {
+                        let costA = Math.floor(Math.random() * 5) + 3; // Triệu đồng/m
+                        let costB = costA + Math.floor(Math.random() * 4) + 2; 
+                        let distance = Math.floor(Math.random() * 5) + 8; // km
+                        return {
+                            question: `Ông A muốn xây một đường ống dẫn nước từ nhà máy đặt tại vị trí $A$ bên bờ sông đến một điểm $B$ ở cồn cát giữa sông. Biết chiều rộng sông là ${distance} (km), khoảng cách từ $A$ đến điểm $C$ trên bờ đối diện trực diện với $B$ là ${distance + 5} (km). Chi phí xây dựng đường ống dưới nước là ${costB} triệu đồng/km, còn trên bờ là ${costA} triệu đồng/km. Hỏi phải đặt điểm kết nối ống từ bờ xuống sông cách $C$ bao nhiêu để tổng chi phí xây dựng là thấp nhất?`,
+                            solution: `Sử dụng đạo hàm để tìm điểm tối ưu, đảm bảo điều kiện khoảng cách không âm và chi phí đạt cực tiểu.`
+                        }
+                    }
+                }
+            ],
+            exponential: [
+                {
+                    title: "Bài toán lãi suất kép tiết kiệm",
+                    generate: () => {
+                        let P = (Math.floor(Math.random() * 5) + 1) * 100; // Số tiền từ 100 đến 500 triệu
+                        let r = (Math.random() * 0.02 + 0.05).toFixed(3) * 100; // Lãi suất từ 5% đến 7% / năm
+                        let n = Math.floor(Math.random() * 5) + 3; // 3 đến 7 năm
+                        let total = P * Math.pow(1 + r/100, n);
+                        return {
+                            question: `Ông Nam gửi tiết kiệm số tiền ${P} triệu đồng vào ngân hàng theo hình thức lãi suất kép với kỳ hạn 1 năm với mức lãi suất ${r}\\% /năm. Giả sử lãi suất không thay đổi qua các năm. Hỏi sau đúng ${n} năm, số tiền cả gốc lẫn lãi ông Nam thu được là bao nhiêu triệu đồng? (Làm tròn kết quả đến chữ số thập phân thứ hai)`,
+                            solution: `Áp dụng công thức lãi suất kép: $A = P(1 + r)^n = ${P} \\times (1 + \\frac{${r}}{100})^{${n}} \\approx ${total.toFixed(2)}$ triệu đồng.`
+                        }
+                    }
+                }
+            ],
+            geometry: [
+                {
+                    title: "Bài toán tọa độ Oxyz trong không gian thực tế",
+                    generate: () => {
+                        let h = Math.floor(Math.random() * 10) + 15; // Chiều cao cột đèn / tháp từ 15 đến 25m
+                        let d = Math.floor(Math.random() * 5) + 5; // Khoảng cách
+                        return {
+                            question: `Trong không gian với hệ tọa độ Oxyz (đơn vị mét), một ngọn hải đăng được đặt tại vị trí đỉnh tháp có tọa độ $I(0; 0; ${h})$. Một chiếc cano di chuyển trên mặt nước (mặt phẳng $Oxy$) theo quỹ đạo là một đường thẳng đi qua điểm $A(${d}; ${d}; 0)$ và nhận vectơ $\\vec{u} = (1; 2; 0)$ làm vectơ chỉ phương. Tính khoảng cách ngắn nhất từ chân hải đăng đến đường đi của cano.`,
+                            solution: `Sử dụng công thức tính khoảng cách từ điểm đến đường thẳng trong không gian Oxyz dựa trên tích có hướng.`
+                        }
+                    }
+                }
+            ],
+            statistics: [
+                {
+                    title: "Bài toán Thống kê mẫu số liệu ghép nhóm",
+                    generate: () => {
+                        let minVal = 150 + Math.floor(Math.random() * 10);
+                        let meanVal = minVal + 15;
+                        return {
+                            question: `Khảo sát thời gian tập thể dục buổi sáng của ${Math.floor(Math.random() * 20) + 40} người dân tại khu vực $X$, ta thu được mẫu số liệu ghép nhóm với nhóm trung tâm là $[${minVal}; ${minVal + 10})$. Hãy tìm số trung bình và mốt của mẫu số liệu ghép nhóm này để đánh giá xu hướng thời gian tập luyện chung.`,
+                            solution: `Sử dụng công thức tính số trung bình và mốt của mẫu số liệu ghép nhóm trong chương trình Toán 12 mới.`
+                        }
+                    }
+                }
+            ]
+        };
+
+        function generateExam() {
+            let topic = document.getElementById('topicSelect').value;
+            let topicName = document.getElementById('topicSelect').options[document.getElementById('topicSelect').selectedIndex].text;
+            document.getElementById('badgeTopic').innerText = topicName;
+            document.getElementById('examTitle').innerText = "Đề Toán Thực Tế - " + topicName;
+
+            let pool = (customDatabase && customDatabase[topic]) ? customDatabase[topic] : defaultBank[topic];
+            let templateObj = pool[Math.floor(Math.random() * pool.length)];
+            let generatedData = templateObj.generate();
+
+            let html = `
+                <div class="bg-indigo-50 border-l-4 border-indigo-600 p-4 rounded-r-lg mb-4">
+                    <h4 class="font-bold text-indigo-900 mb-1">${templateObj.title}</h4>
+                    <p class="text-gray-700">${generatedData.question}</p>
+                </div>
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <h5 class="font-semibold text-gray-800 mb-2">💡 Hướng dẫn giải & Đáp số gợi ý:</h5>
+                    <p class="text-gray-600 text-sm">${generatedData.solution}</p>
+                </div>
+            `;
+
+            document.getElementById('examContent').innerHTML = html;
+            
+            // Render lại công thức toán bằng MathJax nếu có
+            if (window.MathJax) {
+                MathJax.typeset();
+            }
+        }
+
+        // Chức năng tải file mẫu
+        function downloadTemplate() {
+            const templateData = {
+                "optimization": [
+                    {
+                        "title": "Mẫu bài toán tối ưu tự định nghĩa",
+                        "question": "Mẫu câu hỏi với hệ số tùy chỉnh...",
+                        "solution": "Hướng dẫn giải mẫu..."
+                    }
+                ]
+            };
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(templateData, null, 4));
+            let downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "mau_de_toan_thuc_te_tvd.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        // Chức năng xử lý khi upload file bổ sung
+        function handleFileUpload(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let jsonContent = JSON.parse(e.target.result);
+                    customDatabase = jsonContent;
+                    alert("Đã tải lên và cập nhật cơ sở dữ liệu đề thành công!");
+                    generateExam();
+                } catch (err) {
+                    alert("Lỗi đọc file! Vui lòng đảm bảo file đúng định dạng JSON mẫu.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Tự động sinh đề lần đầu khi mở trang
+        window.onload = function() {
+            generateExam();
+        };
+    </script>
+</body>
+</html>
